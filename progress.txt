@@ -1,3 +1,10 @@
+- The intact copy fails type-checking unless package.json is copied too.
+  trigger: when type-checking a scratch copy of src/
+  kind: gotcha
+  cause: src/index.test.ts imports ../package.json
+  resolution: copy package.json into the scratch dir beside src
+  artifact: Cannot find module '../package.json'
+  signal: loud
 - import/order wants the parent group, the sibling group and the ./index import each in its own group, separated by blank lines
   trigger: when an index test imports ../package.json beside sibling and index imports
   kind: pattern
