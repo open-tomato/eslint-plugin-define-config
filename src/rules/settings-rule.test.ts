@@ -8,7 +8,6 @@ import { ABSENT_MESSAGE_ID, MALFORMED_MESSAGE_ID, settingsRule } from './setting
 
 RuleTester.describe = describe;
 RuleTester.it = test;
-RuleTester.itOnly = test.only;
 
 const ruleTester = new RuleTester({ languageOptions: { parser: tsParser } });
 

@@ -12,7 +12,6 @@ import { CODE_RULES, RULES } from './rules';
 
 RuleTester.describe = describe;
 RuleTester.it = test;
-RuleTester.itOnly = test.only;
 
 const ruleTester = new RuleTester({ languageOptions: { parser: tsParser } });
 
