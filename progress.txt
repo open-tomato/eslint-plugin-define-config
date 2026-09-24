@@ -1,3 +1,10 @@
+- import/order wants the type import first, then a blank line, then node builtins, then a blank line, then bun:test and external packages
+  trigger: when adding a test file that imports node builtins, a type import and bun:test
+  kind: gotcha
+  cause: bun:test is classed as external and the type group sits in its own group
+  resolution: order the groups type, builtin, external and rerun bun run lint
+  artifact: There should be at least one empty line between import groups
+  signal: loud
 - artifact: PLAN_TRACKER-rafa-2-eslint-plugin.md: discovers and runs **/*.test.ts files in parallel
 - the bash PIPESTATUS array printed empty
   trigger: when reading an exit code through a pipe in this shell
@@ -221,11 +228,4 @@
   kind: pattern
   cause: the spec's risk list names a settings mistake that silences every rule
   resolution: unknownKeyProblems lists each unknown key after the field problems; remove that line to allow extra keys
-  signal: silent
-- DuplicatesOption is not exported from the @open-tomato/define-config index
-  trigger: when typing the duplicates option in plugin code
-  kind: location
-  cause: the index re-exports MergeOptions but not merge/duplicates types
-  resolution: derive it as NonNullable<MergeOptions['duplicates']>, exported here as DuplicatesSetting
-  artifact: export type DuplicatesOption = 'warn' | 'error' | 'allow';
   signal: silent
