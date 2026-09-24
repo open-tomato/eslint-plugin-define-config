@@ -146,8 +146,14 @@ const isNode = (value: unknown): value is TSESTree.Node => typeof value === 'obj
   && value !== null
   && typeof (value as { type?: unknown }).type === 'string';
 
-/** Strip any `as` and `satisfies` wrapped around `node`. */
-const unwrap = (node: TSESTree.Node): TSESTree.Node => node.type === 'TSAsExpression' || node.type === 'TSSatisfiesExpression'
+/**
+ * Strip any `as` and `satisfies` wrapped around `node`, as the reader does
+ * before reading an element or a value.
+ *
+ * @param node - A node that may be wrapped in `as` or `satisfies`.
+ * @returns The innermost node that is neither.
+ */
+export const unwrap = (node: TSESTree.Node): TSESTree.Node => node.type === 'TSAsExpression' || node.type === 'TSSatisfiesExpression'
   ? unwrap(node.expression)
   : node;
 

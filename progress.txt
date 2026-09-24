@@ -1,3 +1,10 @@
+- the tsconfig lib target lacks es2023, so toSorted fails check-types while bun test still passes
+  trigger: when using Array.prototype.toSorted in a *.test.ts file
+  kind: gotcha
+  cause: tsconfig lib is older than es2023
+  resolution: copy and sort with [...items].sort()
+  artifact: Property 'toSorted' does not exist on type
+  signal: loud
 - The cache accepts a compute thunk, so tests use stand-in objects as the SourceCode key and Analysis value and never parse real source
   trigger: when caching per linted file
   kind: pattern
