@@ -1,3 +1,24 @@
+- a passing check-pack is only meaningful next to a control that plants a stray file and a file: specifier
+  trigger: when proving check-pack can fail
+  kind: pattern
+  cause: a clean manifest exits 0 whether or not the checks work
+  resolution: temporarily add tsconfig.json to files and set the dependency to file:../define-config; expect exit 1 with both problems, then restore package.json
+  artifact: check-pack: packed tarball holds tsconfig.json, which is outside the allow-list
+  signal: silent
+- Bun.semver offers satisfies and order but no validRange
+  trigger: when validating that a dependency specifier is a semver range under bun
+  kind: gotcha
+  cause: bun's semver API has no range-validity check
+  resolution: a small regex over npm's range grammar (comparators, x-ranges, hyphen ranges, ||) in isSemverRange, with accept and reject tables in its tests
+  artifact: Bun.semver
+  signal: silent
+- requiring README.md and LICENSE in the pack would fail check-pack until the next scaffold task adds them
+  trigger: when checking the pack before README.md and LICENSE exist
+  kind: gotcha
+  cause: the task sets an allow-list, and those files do not exist yet
+  resolution: only package.json, dist/index.js and dist/index.d.ts are required; README.md and LICENSE are allowed, not required
+  artifact: packed tarball is missing
+  signal: silent
 - the library's fence settings name its own package, which here is a real runtime dependency
   trigger: when adapting the markdown-fence settings from ../define-config
   kind: gotcha
