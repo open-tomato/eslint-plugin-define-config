@@ -1,3 +1,23 @@
+- unknown keys under settings['define-config'] are reported as malformed, so a misspelt 'step' is not a silent graph-rules-off
+  trigger: when deciding what counts as malformed settings
+  kind: pattern
+  cause: the spec's risk list names a settings mistake that silences every rule
+  resolution: unknownKeyProblems lists each unknown key after the field problems; remove that line to allow extra keys
+  signal: silent
+- DuplicatesOption is not exported from the @open-tomato/define-config index
+  trigger: when typing the duplicates option in plugin code
+  kind: location
+  cause: the index re-exports MergeOptions but not merge/duplicates types
+  resolution: derive it as NonNullable<MergeOptions['duplicates']>, exported here as DuplicatesSetting
+  artifact: export type DuplicatesOption = 'warn' | 'error' | 'allow';
+  signal: silent
+- resolveGraph's first parameter is the typed Flows record, and MergeResult.value entries are unknown, so tsc refuses the call
+  trigger: when passing merge(...).value['flows'] to resolveGraph in a test
+  kind: gotcha
+  cause: MergeResult.value is Readonly<Record<string, unknown>>
+  resolution: cast with 'as Parameters<typeof resolveGraph>[0]'; analyse.ts will need the same narrowing
+  artifact: Argument of type 'unknown' is not assignable to parameter of type 'Readonly<Record<string, unknown>>'
+  signal: loud
 - the fixture is read as text for the parser and dynamically imported for the runtime array, so the two views come from one file
   trigger: when a test must both parse and execute the same config file
   kind: pattern
