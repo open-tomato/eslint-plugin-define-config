@@ -1,3 +1,24 @@
+- the library's fence settings name its own package, which here is a real runtime dependency
+  trigger: when adapting the markdown-fence settings from ../define-config
+  kind: gotcha
+  cause: the library ignored and pinned its own unbuilt name; in this package that name resolves from node_modules
+  resolution: point the fence no-unresolved ignore and import/internal-regex at @open-tomato/eslint-plugin-define-config
+  artifact: 'import/internal-regex': '^@open-tomato/define-config$'
+  signal: silent
+- a clean eslint . cannot prove the ignores work; putting the same bad file in both a linted directory and each ignored one proves both the rules and the ignores
+  trigger: when checking that eslint ignores really exclude a directory
+  kind: pattern
+  cause: an ignored directory holding no bad files gives the same exit 0 as one that is linted
+  resolution: put a double-quoted, semicolon-free unused const in src/ and in each ignored directory; only the src/ copy should report
+  artifact: Strings must use singlequote
+  signal: silent
+- bun blocks the unrs-resolver postinstall and reports it as untrusted
+  trigger: when adding eslint-import-resolver-typescript with bun add
+  kind: gotcha
+  cause: bun runs lifecycle scripts only for trusted dependencies, and ../define-config does not trust this one either
+  resolution: left untrusted; eslint . works without the script
+  artifact: Blocked 1 postinstall. Run `bun pm untrusted` for details.
+  signal: loud
 - the placeholder entry cannot show whether --packages external works; a throwaway probe importing merge, built with and without the flag, shows it
   trigger: when verifying the build keeps dependencies external while src/index.ts imports nothing
   kind: pattern
