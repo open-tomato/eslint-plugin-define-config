@@ -1,3 +1,10 @@
+- the rules-exhaustive test type-checks a scratch copy of src only, so a static import reaching outside src fails its tsc run
+  trigger: when a src test statically imports from ../fixtures
+  kind: gotcha
+  cause: makeCopy copies src/ and tsconfig files, not fixtures/
+  resolution: load fixture modules with a dynamic import of a computed path
+  artifact: unmodified copy of src type-checks
+  signal: loud
 - import/order wants the type import first, then a blank line, then node builtins, then a blank line, then bun:test and external packages
   trigger: when adding a test file that imports node builtins, a type import and bun:test
   kind: gotcha
@@ -222,10 +229,4 @@
   cause: the rule only checks for opaque paths lying under flows.<f>; the root path [] is a prefix of flows.<f>, not under it
   resolution: treat an opaque path that is a prefix of flows.<f>, [] included, as covering that flow
   artifact: analysis.opaque[i] equals [[]]
-  signal: silent
-- unknown keys under settings['define-config'] are reported as malformed, so a misspelt 'step' is not a silent graph-rules-off
-  trigger: when deciding what counts as malformed settings
-  kind: pattern
-  cause: the spec's risk list names a settings mistake that silences every rule
-  resolution: unknownKeyProblems lists each unknown key after the field problems; remove that line to allow extra keys
   signal: silent

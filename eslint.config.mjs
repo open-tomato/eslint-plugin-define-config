@@ -113,7 +113,7 @@ export default defineConfig([
       // and CI lints before it builds.
       'import/no-unresolved': [
         'error',
-        { ignore: ['^bun:', '^@open-tomato/eslint-plugin-define-config$'] },
+        { ignore: ['^bun:', '^\\.\\.?/', '^@open-tomato/eslint-plugin-define-config$'] },
       ],
     },
     settings: {
