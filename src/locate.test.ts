@@ -677,3 +677,36 @@ describe('locate, entry resolution', () => {
     expect(located.map((item) => item.message.startsWith(DEFAULTS_PREFIX))).toEqual([false, true]);
   });
 });
+
+describe('locate, defaults against the file', () => {
+  test('a handler set in defaults and overridden in the file is reported on the file\'s line', () => {
+    // Arrange
+    const defaults = [{ flows: { f: { a: { step: 'fix', on: { fail: 'b' } }, b: { step: 'fix' } } } }];
+    const array = '[\n  { flows: { f: { a: { on: { fail: \'b\' } } } } }, // here\n]';
+    const { source, read, analysis } = analyseArray(array, { ...FLOW_SETTINGS, defaults });
+    const [diagnostic, stage] = findingOf(analysis, 'unknown-outcome');
+
+    // Act
+    const located = locate(diagnostic, stage, read, analysis);
+
+    // Assert
+    expect(keyText(located.node, source)).toBe('fail');
+    expect(located.node.loc.start.line).toBe(lineOf(source, '// here'));
+    expect(located.message).toBe(diagnostic.message);
+  });
+
+  test('a handler set in the file and also set in defaults is reported on the file\'s line', () => {
+    // Arrange
+    const defaults = [{ flows: { f: { a: { step: 'fix', on: { fail: 'b' } }, b: { step: 'fix' } } } }];
+    const array = '[\n  { flows: { f: { a: { step: \'fix\', on: { fail: \'c\' } }, c: { step: \'fix\' } } } }, // here\n]';
+    const { source, read, analysis } = analyseArray(array, { ...FLOW_SETTINGS, defaults });
+    const [diagnostic, stage] = findingOf(analysis, 'unknown-outcome');
+
+    // Act
+    const located = locate(diagnostic, stage, read, analysis);
+
+    // Assert
+    expect(located.message.startsWith(DEFAULTS_PREFIX)).toBe(false);
+    expect(located.node.loc.start.line).toBe(lineOf(source, '// here'));
+  });
+});

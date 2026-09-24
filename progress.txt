@@ -1,3 +1,31 @@
+- matching a key against every dot-joined run of path keys handles both 'a.b' spanning ['a','b'] and a path key that itself holds a dot
+  trigger: when matching a written object key against a diagnostic path
+  kind: pattern
+  cause: provenance and required paths dot-join keys, so a dotted key and nested keys share a path
+  resolution: spanOf finds the n with path.slice(from, from + n).join('.') === key
+  artifact: spanOf
+  signal: silent
+- sed mutations of the locator (no defaults subtraction, no dotted span, counting removes, first match instead of last, no defaults branch) each turn tests red
+  trigger: when checking that locator tests can fail
+  kind: pattern
+  cause: a passing suite alone does not show the assertions constrain the behaviour
+  resolution: back up locate.ts, apply one mutation, run bun test src/locate.test.ts, restore, and diff against the backup
+  artifact: 41 pass  10 fail <- no subtraction
+  signal: silent
+- an untyped const array literal infers string[] and fails check-types while bun test passes
+  trigger: when asserting toEqual on a literal string array against DiagnosticCode values
+  kind: gotcha
+  cause: expect(DiagnosticCode[]).toEqual narrows its parameter to the union
+  resolution: annotate the expected array as DiagnosticCode[]
+  artifact: error TS2769: No overload matches this call.
+  signal: loud
+- provenance at flows.f.a names only the entry that started the step map, not a later entry that merged keys into it
+  trigger: when locating a graph finding whose path ends at a step id (handler-conflict, interactive-unattended, unreachable)
+  kind: gotcha
+  cause: merge records nothing at a path for a map merged into an existing map, only at the keys it writes below
+  resolution: accepted as the spec's rule; pinned by the test 'ties a graph finding to the entry that started its map, not one that merged into it'
+  artifact: a map merged into a map already at the path records nothing at the path itself
+  signal: silent
 - the tsconfig lib target lacks es2023, so toSorted fails check-types while bun test still passes
   trigger: when using Array.prototype.toSorted in a *.test.ts file
   kind: gotcha
@@ -198,11 +226,4 @@
   cause: bun test treats no matching files as an error
   resolution: expected until scripts/pack-check.test.ts lands in a later scaffold task
   artifact: error: 0 test files matching **{.test,.spec,_test_,_spec_}.{js,ts,jsx,tsx}
-  signal: loud
-- on bun 1.3.14 the user ~/.npmrc scope registry wins over bunfig.toml [install.scopes]; only a project-level .npmrc overrides it
-  trigger: when relying on bunfig.toml [install.scopes] to override a user-level ~/.npmrc scope route
-  kind: gotcha
-  cause: bun's registry precedence puts the user ~/.npmrc scope route ahead of the bunfig scope table, whether the key is written with or without the @
-  resolution: keep a project .npmrc with @open-tomato:registry=https://registry.npmjs.org/; bunfig.toml alone still fails
-  artifact: error: GET https://npm.heimdall.bifemecanico.com/@open-tomato%2fdefine-config - 404
   signal: loud
