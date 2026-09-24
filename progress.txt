@@ -1,0 +1,21 @@
+- the placeholder entry cannot show whether --packages external works; a throwaway probe importing merge, built with and without the flag, shows it
+  trigger: when verifying the build keeps dependencies external while src/index.ts imports nothing
+  kind: pattern
+  cause: a bundle with no imports looks the same either way
+  resolution: check dist/index.js for 'from "@open-tomato/define-config"' once the rules stage imports the library
+  artifact: --packages external
+  signal: silent
+- bun test exits 1 when it discovers zero test files
+  trigger: when running bun test before any *.test.ts file exists
+  kind: gotcha
+  cause: bun test treats no matching files as an error
+  resolution: expected until scripts/pack-check.test.ts lands in a later scaffold task
+  artifact: error: 0 test files matching **{.test,.spec,_test_,_spec_}.{js,ts,jsx,tsx}
+  signal: loud
+- on bun 1.3.14 the user ~/.npmrc scope registry wins over bunfig.toml [install.scopes]; only a project-level .npmrc overrides it
+  trigger: when relying on bunfig.toml [install.scopes] to override a user-level ~/.npmrc scope route
+  kind: gotcha
+  cause: bun's registry precedence puts the user ~/.npmrc scope route ahead of the bunfig scope table, whether the key is written with or without the @
+  resolution: keep a project .npmrc with @open-tomato:registry=https://registry.npmjs.org/; bunfig.toml alone still fails
+  artifact: error: GET https://npm.heimdall.bifemecanico.com/@open-tomato%2fdefine-config - 404
+  signal: loud
