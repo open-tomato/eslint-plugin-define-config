@@ -1,3 +1,9 @@
+- spyOn(namespaceImport, 'merge') intercepts calls made by src/analysis/analyse.ts, which imports merge by name
+  trigger: when spying on a library function called from another module in bun:test
+  kind: pattern
+  cause: bun ESM namespace bindings are live and patchable
+  resolution: import * as library and spyOn(library, 'merge'), then assert on mock.calls.length
+  signal: silent
 - The intact copy fails type-checking unless package.json is copied too.
   trigger: when type-checking a scratch copy of src/
   kind: gotcha
@@ -222,10 +228,3 @@
   cause: a suite that passes at once proves nothing until a broken implementation is shown to fail it
   resolution: apply each break with perl to a backed-up copy, run bun test src/reader, then restore the file and check it with cmp
   signal: silent
-- import/order wants all import type lines in the first block, with ./read-entries sorted before @typescript-eslint/types
-  trigger: when a test file has both a relative and a package import type
-  kind: gotcha
-  cause: the type group comes first and is alphabetized, and '.' sorts before '@'
-  resolution: put every import type line in one leading block, in the order the lint message gives
-  artifact: `./read-entries` type import should occur before type import of `@typescript-eslint/types`
-  signal: loud

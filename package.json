@@ -46,6 +46,7 @@
     "prepack": "bun run build",
     "test": "bun test",
     "lint": "eslint .",
+    "lint:fixture": "cd fixtures/host && bun --bun eslint .",
     "check-types": "tsc --noEmit",
     "check-pack": "bun run scripts/pack-check.ts"
   },

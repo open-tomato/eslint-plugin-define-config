@@ -65,6 +65,12 @@ bun run check-pack
   `dependencies` contains exactly `@open-tomato/define-config` at a semver range with no `file:`,
   `link:` or `workspace:` specifier.
 
+**The host fixture is not a gate.** `bun run lint:fixture` runs `bun --bun eslint .` inside
+`fixtures/host/`, whose `eslint.config.mjs` imports the plugin from `../../src/index.ts` (no build
+needed). Its `rafa.config.ts` is broken on purpose, so the script reports one
+`define-config/unknown-outcome` error and one `define-config/duplicate-key` warning there, plus the
+same warning in `opaque/rafa.config.ts`, and exits 1.
+
 ## ESLint Style Law for Agent Sessions
 
 **Style is enforced by ESLint.** Write code, run `bun run lint`, and take the ordering and fixes
