@@ -360,3 +360,23 @@ describe('readEntries: finding the call', () => {
     ]);
   });
 });
+
+describe('readEntries: parity with runtime', () => {
+  test('a rafa-shaped config reads to the same entries its runtime defineConfig array holds', async () => {
+    // Arrange
+    const path = new URL('./fixtures/rafa-config.ts', import.meta.url);
+    const source = await Bun.file(path).text();
+    const runtime = (await import(path.href) as { default: unknown }).default;
+
+    // Act
+    const result = readEntries(program(source));
+
+    // Assert
+    expect(result.kind).toBe('entries');
+    if (result.kind !== 'entries') {
+      return;
+    }
+    expect(result.entries).toEqual(runtime as never);
+    expect(result.opaque).toEqual([[], []]);
+  });
+});
