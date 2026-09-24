@@ -1,3 +1,10 @@
+- The cache accepts a compute thunk, so tests use stand-in objects as the SourceCode key and Analysis value and never parse real source
+  trigger: when caching per linted file
+  kind: pattern
+  cause: the WeakMap only uses the identity of its key and value
+  resolution: cast plain objects to SourceCode and Analysis in the tests
+  artifact: cachedAnalysis(sourceCode, compute)
+  signal: silent
 - six perl breaks of suppress.ts (reachOf identity, one-way overlaps, no per-flow scope, non-flow scope as own path, joined-string prefix, graph unfiltered) each failed between 1 and 7 tests
   trigger: when a suppression test passes on its first run
   kind: pattern
