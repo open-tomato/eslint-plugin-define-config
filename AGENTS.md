@@ -129,6 +129,9 @@ test('rule detects invalid config entry', () => {
 Write tests first (RED), implement to pass (GREEN), refactor (IMPROVE), verify coverage. Use
 `fast-check` for property-based testing where appropriate.
 
+Tree-specific test pitfalls (type-check strictness, the scratch-copy exhaustiveness test, the host
+fixture's design) live in [`context/testing.md`](context/testing.md).
+
 ## Publishing
 
 - **Registry:** npmjs (https://registry.npmjs.org/)
