@@ -1,3 +1,30 @@
+- artifact: PLAN_TRACKER-rafa-2-eslint-plugin.md: discovers and runs **/*.test.ts files in parallel
+- the bash PIPESTATUS array printed empty
+  trigger: when reading an exit code through a pipe in this shell
+  kind: gotcha
+  cause: the Bash tool runs zsh here, which names the array pipestatus (lowercase) and starts it at 1
+  resolution: redirect to a file and read $? instead of piping
+  signal: silent
+- bunx eslint --no-ignore fixtures/host applies the root rules to the fixture; confirm with -f json that files were linted and with a --stdin probe that a violation fails
+  trigger: when style-checking fixture files the root eslint . ignores
+  kind: pattern
+  cause: the root config ignores fixtures/**, so a plain run lints nothing there and passes vacuously
+  resolution: run --no-ignore, check the JSON file list, and pipe in a double-quoted probe as a control
+  artifact: Strings must use singlequote
+  signal: silent
+- the defaults file is linted as a project file too, merged with itself as settings defaults
+  trigger: when linting fixtures/host with eslint . inside it
+  kind: gotcha
+  cause: eslint . in fixtures/host matches defaults/rafa.config.ts; the defaults layer and the file layer differ, so no duplicate-key, but any graph flaw in defaults alone would show
+  resolution: keep the defaults layer clean on its own (every step reachable) and put the step reached only by the handler in the project layer
+  signal: silent
+- the no-unreachable assertion is vacuous unless a step entry is reachable only through the opaque handler
+  trigger: when designing a fixture whose opaque variant must yield no unreachable
+  kind: pattern
+  cause: if the target is reachable another way, a naive placeholder never makes it unreachable, so silence proves nothing
+  resolution: rollback is a step entry in the project layer reached only by deploy.on.fail; resolveGraph without that handler reports unreachable@flows.ship.rollback
+  artifact: unreachable@flows.ship.rollback
+  signal: silent
 - spyOn(namespaceImport, 'merge') intercepts calls made by src/analysis/analyse.ts, which imports merge by name
   trigger: when spying on a library function called from another module in bun:test
   kind: pattern
@@ -201,30 +228,4 @@
   cause: the index re-exports MergeOptions but not merge/duplicates types
   resolution: derive it as NonNullable<MergeOptions['duplicates']>, exported here as DuplicatesSetting
   artifact: export type DuplicatesOption = 'warn' | 'error' | 'allow';
-  signal: silent
-- resolveGraph's first parameter is the typed Flows record, and MergeResult.value entries are unknown, so tsc refuses the call
-  trigger: when passing merge(...).value['flows'] to resolveGraph in a test
-  kind: gotcha
-  cause: MergeResult.value is Readonly<Record<string, unknown>>
-  resolution: cast with 'as Parameters<typeof resolveGraph>[0]'; analyse.ts will need the same narrowing
-  artifact: Argument of type 'unknown' is not assignable to parameter of type 'Readonly<Record<string, unknown>>'
-  signal: loud
-- the fixture is read as text for the parser and dynamically imported for the runtime array, so the two views come from one file
-  trigger: when a test must both parse and execute the same config file
-  kind: pattern
-  cause: parity needs identical source on both sides
-  resolution: keep the fixture in src/reader/fixtures/ and use Bun.file(url).text() plus import(url.href)
-  signal: silent
-- the build now emits dist/reader/read-entries.d.ts, which imports type from @typescript-eslint/types, a devDependency
-  trigger: when running bun run build after adding src/reader
-  kind: location
-  cause: tsconfig.build.json emits declarations for everything under src, not only what index.ts reaches
-  resolution: left as is; the exports map exposes only dist/index.*, and check-pack passes
-  artifact: dist/reader/read-entries.d.ts
-  signal: silent
-- 10 deliberate code breaks (computed-key check, unary operator, two-call check, array opacity, dotted-key split, __proto__, type-only import, as-unwrap, element guard, duplicate-key order) each made at least one test fail
-  trigger: when a new module passes all its tests on the first green run
-  kind: pattern
-  cause: a suite that passes at once proves nothing until a broken implementation is shown to fail it
-  resolution: apply each break with perl to a backed-up copy, run bun test src/reader, then restore the file and check it with cmp
   signal: silent
