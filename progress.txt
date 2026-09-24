@@ -1,3 +1,51 @@
+- artifact: PLAN_TRACKER-rafa-2-eslint-plugin.md: discovers and runs `**/*.test.ts` files in parallel
+- PIPESTATUS printed nothing, so the exit code was not read
+  trigger: when reading a gate's exit code through a pipe in the Bash tool
+  kind: gotcha
+  cause: the shell is zsh, whose array is the lowercase pipestatus
+  resolution: redirect each gate to a file and read $? directly
+  signal: silent
+- check-types fails because tsconfig sets lib ES2022; bun test passes anyway
+  trigger: when using Array.prototype.toSorted in a test
+  kind: gotcha
+  cause: toSorted is ES2023
+  resolution: use [...array].sort()
+  artifact: Property 'toSorted' does not exist on type 'string[]'
+  signal: loud
+- the published 0.4.0 resolveGraph takes Readonly<Record<string, unknown>>, so no cast is needed once flows is narrowed, unlike the progress.txt note predicted
+  trigger: when calling resolveGraph on the merged flows
+  kind: location
+  cause: the earlier cast was needed only because value['flows'] is unknown
+  resolution: narrow with an isRecord check in flowsOf, the way the loader does
+  artifact: export declare function resolveGraph(flows: Readonly<Record<string, unknown>>, steps: StepRegistry): ResolveGraphResult;
+  signal: silent
+- a string flows cannot tell a checked flowsOf from an unchecked one; an array flows can
+  trigger: when testing that analyse reads a non-object flows as no flows
+  kind: pattern
+  cause: resolveGraph finds no plain-object flow in a string's characters but reads an array's item 0 as a flow named '0'
+  resolution: the test includes flows: [{ a: { step: 'nope' } }] and expects no findings
+  signal: silent
+- a placeholder handler target, step name or $start is reported as unknown-step at the opaque path itself, so it never resolves to a real step
+  trigger: when checking what the placeholder does inside the graph
+  kind: pattern
+  cause: a handler target is looked up as a step entry of the flow or a registered step, and the placeholder is neither
+  resolution: a PLACEHOLDER test asserts the three unknown-step paths, sorted, since the library's reporting order is internal
+  artifact: which is neither a step entry of flow
+  signal: silent
+- an opaque $replace merges as the placeholder and never replaces, yet its path is neither a prefix of nor has as a prefix the paths it could drop
+  trigger: when writing the merge-path prefix rule in src/analysis/suppress.ts
+  kind: gotcha
+  cause: ['a','$replace'] is not a prefix of ['a','x'], and a top-level ['$replace'] is not under flows at all
+  resolution: count an opaque path ending in $replace as its parent path when suppressing
+  artifact: opaque.opaque equals [[['a', '$replace']]]
+  signal: silent
+- a wholly opaque entry (top-level spread or computed key) has the opaque path [], which the per-flow graph rule as worded never matches
+  trigger: when writing the suppression rules in src/analysis/suppress.ts
+  kind: gotcha
+  cause: the rule only checks for opaque paths lying under flows.<f>; the root path [] is a prefix of flows.<f>, not under it
+  resolution: treat an opaque path that is a prefix of flows.<f>, [] included, as covering that flow
+  artifact: analysis.opaque[i] equals [[]]
+  signal: silent
 - unknown keys under settings['define-config'] are reported as malformed, so a misspelt 'step' is not a silent graph-rules-off
   trigger: when deciding what counts as malformed settings
   kind: pattern
