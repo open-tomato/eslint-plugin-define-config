@@ -1,24 +1,67 @@
-# Scaffold Verification Results
-
-## Gate 1: bun run lint
-Exit Code: 0
-Summary: ESLint check passed (no linting errors)
-
-## Gate 2: bun run check-types
-Exit Code: 0
-Summary: TypeScript type checking passed (--noEmit)
-
-## Gate 3: bun test
-Exit Code: 0
-Summary: 41 pass, 0 fail, 55 expect() calls in 41 tests [11.00ms]
-
-## Gate 4: bun run build
-Exit Code: 0
-Summary: Successfully bundled index.js (102 bytes) and generated TypeScript declarations
-
-## Gate 5: bun run check-pack
-Exit Code: 0
-Summary: check-pack: ok (package contents and dependencies verified)
-
----
-All gates passed. Scaffold is ready for the next stage.
+- scaffold is complete and functional
+  trigger: all gates passed on first run
+  kind: pattern
+  signal: loud
+- a passing check-pack is only meaningful next to a control that plants a stray file and a file: specifier
+  trigger: when proving check-pack can fail
+  kind: pattern
+  cause: a clean manifest exits 0 whether or not the checks work
+  resolution: temporarily add tsconfig.json to files and set the dependency to file:../define-config; expect exit 1 with both problems, then restore package.json
+  artifact: check-pack: packed tarball holds tsconfig.json, which is outside the allow-list
+  signal: silent
+- Bun.semver offers satisfies and order but no validRange
+  trigger: when validating that a dependency specifier is a semver range under bun
+  kind: gotcha
+  cause: bun's semver API has no range-validity check
+  resolution: a small regex over npm's range grammar (comparators, x-ranges, hyphen ranges, ||) in isSemverRange, with accept and reject tables in its tests
+  artifact: Bun.semver
+  signal: silent
+- requiring README.md and LICENSE in the pack would fail check-pack until the next scaffold task adds them
+  trigger: when checking the pack before README.md and LICENSE exist
+  kind: gotcha
+  cause: the task sets an allow-list, and those files do not exist yet
+  resolution: only package.json, dist/index.js and dist/index.d.ts are required; README.md and LICENSE are allowed, not required
+  artifact: packed tarball is missing
+  signal: silent
+- the library's fence settings name its own package, which here is a real runtime dependency
+  trigger: when adapting the markdown-fence settings from ../define-config
+  kind: gotcha
+  cause: the library ignored and pinned its own unbuilt name; in this package that name resolves from node_modules
+  resolution: point the fence no-unresolved ignore and import/internal-regex at @open-tomato/eslint-plugin-define-config
+  artifact: 'import/internal-regex': '^@open-tomato/define-config$'
+  signal: silent
+- a clean eslint . cannot prove the ignores work; putting the same bad file in both a linted directory and each ignored one proves both the rules and the ignores
+  trigger: when checking that eslint ignores really exclude a directory
+  kind: pattern
+  cause: an ignored directory holding no bad files gives the same exit 0 as one that is linted
+  resolution: put a double-quoted, semicolon-free unused const in src/ and in each ignored directory; only the src/ copy should report
+  artifact: Strings must use singlequote
+  signal: silent
+- bun blocks the unrs-resolver postinstall and reports it as untrusted
+  trigger: when adding eslint-import-resolver-typescript with bun add
+  kind: gotcha
+  cause: bun runs lifecycle scripts only for trusted dependencies, and ../define-config does not trust this one either
+  resolution: left untrusted; eslint . works without the script
+  artifact: Blocked 1 postinstall. Run `bun pm untrusted` for details.
+  signal: loud
+- the placeholder entry cannot show whether --packages external works; a throwaway probe importing merge, built with and without the flag, shows it
+  trigger: when verifying the build keeps dependencies external while src/index.ts imports nothing
+  kind: pattern
+  cause: a bundle with no imports looks the same either way
+  resolution: check dist/index.js for 'from "@open-tomato/define-config"' once the rules stage imports the library
+  artifact: --packages external
+  signal: silent
+- bun test exits 1 when it discovers zero test files
+  trigger: when running bun test before any *.test.ts file exists
+  kind: gotcha
+  cause: bun test treats no matching files as an error
+  resolution: expected until scripts/pack-check.test.ts lands in a later scaffold task
+  artifact: error: 0 test files matching **{.test,.spec,_test_,_spec_}.{js,ts,jsx,tsx}
+  signal: loud
+- on bun 1.3.14 the user ~/.npmrc scope registry wins over bunfig.toml [install.scopes]; only a project-level .npmrc overrides it
+  trigger: when relying on bunfig.toml [install.scopes] to override a user-level ~/.npmrc scope route
+  kind: gotcha
+  cause: bun's registry precedence puts the user ~/.npmrc scope route ahead of the bunfig scope table, whether the key is written with or without the @
+  resolution: keep a project .npmrc with @open-tomato:registry=https://registry.npmjs.org/; bunfig.toml alone still fails
+  artifact: error: GET https://npm.heimdall.bifemecanico.com/@open-tomato%2fdefine-config - 404
+  signal: loud
