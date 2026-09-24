@@ -1,3 +1,10 @@
+- Markdown TypeScript code blocks were being linted as real code
+  trigger: Initial lint run
+  kind: gotcha
+  cause: ESLint processes fenced code blocks in markdown files
+  resolution: Made all code examples complete, valid TypeScript; added import ignore pattern for relative paths
+  artifact: Unable to resolve path to module
+  signal: loud
 - the rules-exhaustive test type-checks a scratch copy of src only, so a static import reaching outside src fails its tsc run
   trigger: when a src test statically imports from ../fixtures
   kind: gotcha
@@ -223,10 +230,24 @@
   resolution: count an opaque path ending in $replace as its parent path when suppressing
   artifact: opaque.opaque equals [[['a', '$replace']]]
   signal: silent
-- a wholly opaque entry (top-level spread or computed key) has the opaque path [], which the per-flow graph rule as worded never matches
-  trigger: when writing the suppression rules in src/analysis/suppress.ts
-  kind: gotcha
-  cause: the rule only checks for opaque paths lying under flows.<f>; the root path [] is a prefix of flows.<f>, not under it
-  resolution: treat an opaque path that is a prefix of flows.<f>, [] included, as covering that flow
-  artifact: analysis.opaque[i] equals [[]]
-  signal: silent
+
+## Close-out notes (rafa-2-eslint-plugin)
+
+Captures (each read by exit code and its own summary line):
+- bun run lint: exit 0 (`eslint .`, no output)
+- bun run check-types: exit 0 (`tsc --noEmit`, no output)
+- bun test: exit 0, 331 pass, 0 fail, 458 expect() calls, 16 files, 2.13s
+- bun run build: exit 0, bundled 11 modules, index.js 19.42 KB, declarations emitted
+- bun run check-pack: exit 0, `check-pack: ok`
+- bun pm pack --dry-run: exit 0, 15 files, unpacked 72.00KB, only package.json, LICENSE, README.md and dist/**
+- git merge-tree --write-tree origin/main HEAD: exit 0, clean merge, tree f85d28fb3f3f2dae7ba1da705334a3d5416aa582
+- fixture lint wall time recorded by the parity test: 6ms
+
+Test plan:
+- bun test covers the rules, reader, analysis, locator, fixture and parity tests
+- bun run lint:fixture is not a gate; it exits 1 by design with one define-config/unknown-outcome
+  error and the duplicate-key warnings from the deliberately broken fixture
+
+Recorded debt:
+- package.json version is still 0.0.0 (AGENTS.md lists 0.1.0); set it before publishing
+- coverage percentage was not measured with `bun test --coverage` in this run
