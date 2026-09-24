@@ -1,0 +1,9 @@
+# Pin the @open-tomato scope to npmjs, which carries
+# @open-tomato/define-config.
+#
+# Measured on bun 1.3.14: a scope route in the user-level ~/.npmrc wins
+# over this table, so on a machine whose ~/.npmrc routes @open-tomato
+# elsewhere it is the project .npmrc that makes `bun install` resolve from
+# npmjs. This table covers machines with no such route, such as CI.
+[install.scopes]
+"@open-tomato" = "https://registry.npmjs.org/"

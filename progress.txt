@@ -1,0 +1,233 @@
+- artifact: PLAN_TRACKER-rafa-2-eslint-plugin.md: "version": "0.0.0"
+- the command string is not word-split, so it fails to run
+  trigger: when looping gates through a zsh variable such as for g in ...; do $g
+  kind: gotcha
+  cause: zsh does not split unquoted variable expansions
+  resolution: call each gate directly and read ${pipestatus[1]} instead of PIPESTATUS
+  artifact: (eval):1: command not found: bun run lint
+  signal: loud
+- Markdown TypeScript code blocks were being linted as real code
+  trigger: Initial lint run
+  kind: gotcha
+  cause: ESLint processes fenced code blocks in markdown files
+  resolution: Made all code examples complete, valid TypeScript; added import ignore pattern for relative paths
+  artifact: Unable to resolve path to module
+  signal: loud
+- the rules-exhaustive test type-checks a scratch copy of src only, so a static import reaching outside src fails its tsc run
+  trigger: when a src test statically imports from ../fixtures
+  kind: gotcha
+  cause: makeCopy copies src/ and tsconfig files, not fixtures/
+  resolution: load fixture modules with a dynamic import of a computed path
+  artifact: unmodified copy of src type-checks
+  signal: loud
+- import/order wants the type import first, then a blank line, then node builtins, then a blank line, then bun:test and external packages
+  trigger: when adding a test file that imports node builtins, a type import and bun:test
+  kind: gotcha
+  cause: bun:test is classed as external and the type group sits in its own group
+  resolution: order the groups type, builtin, external and rerun bun run lint
+  artifact: There should be at least one empty line between import groups
+  signal: loud
+- artifact: PLAN_TRACKER-rafa-2-eslint-plugin.md: discovers and runs **/*.test.ts files in parallel
+- the bash PIPESTATUS array printed empty
+  trigger: when reading an exit code through a pipe in this shell
+  kind: gotcha
+  cause: the Bash tool runs zsh here, which names the array pipestatus (lowercase) and starts it at 1
+  resolution: redirect to a file and read $? instead of piping
+  signal: silent
+- bunx eslint --no-ignore fixtures/host applies the root rules to the fixture; confirm with -f json that files were linted and with a --stdin probe that a violation fails
+  trigger: when style-checking fixture files the root eslint . ignores
+  kind: pattern
+  cause: the root config ignores fixtures/**, so a plain run lints nothing there and passes vacuously
+  resolution: run --no-ignore, check the JSON file list, and pipe in a double-quoted probe as a control
+  artifact: Strings must use singlequote
+  signal: silent
+- the defaults file is linted as a project file too, merged with itself as settings defaults
+  trigger: when linting fixtures/host with eslint . inside it
+  kind: gotcha
+  cause: eslint . in fixtures/host matches defaults/rafa.config.ts; the defaults layer and the file layer differ, so no duplicate-key, but any graph flaw in defaults alone would show
+  resolution: keep the defaults layer clean on its own (every step reachable) and put the step reached only by the handler in the project layer
+  signal: silent
+- the no-unreachable assertion is vacuous unless a step entry is reachable only through the opaque handler
+  trigger: when designing a fixture whose opaque variant must yield no unreachable
+  kind: pattern
+  cause: if the target is reachable another way, a naive placeholder never makes it unreachable, so silence proves nothing
+  resolution: rollback is a step entry in the project layer reached only by deploy.on.fail; resolveGraph without that handler reports unreachable@flows.ship.rollback
+  artifact: unreachable@flows.ship.rollback
+  signal: silent
+- spyOn(namespaceImport, 'merge') intercepts calls made by src/analysis/analyse.ts, which imports merge by name
+  trigger: when spying on a library function called from another module in bun:test
+  kind: pattern
+  cause: bun ESM namespace bindings are live and patchable
+  resolution: import * as library and spyOn(library, 'merge'), then assert on mock.calls.length
+  signal: silent
+- The intact copy fails type-checking unless package.json is copied too.
+  trigger: when type-checking a scratch copy of src/
+  kind: gotcha
+  cause: src/index.test.ts imports ../package.json
+  resolution: copy package.json into the scratch dir beside src
+  artifact: Cannot find module '../package.json'
+  signal: loud
+- import/order wants the parent group, the sibling group and the ./index import each in its own group, separated by blank lines
+  trigger: when an index test imports ../package.json beside sibling and index imports
+  kind: pattern
+  cause: the index path group is separate from sibling in sharedRules.mjs
+  resolution: put ../package.json first, then the ./x imports, then import plugin from './index' after a blank line
+  artifact: There should be at least one empty line between import groups
+  signal: loud
+- a host that also registers the plugin under the same prefix makes ESLint throw
+  trigger: when a flat-config preset registers a copy of the plugin rather than the plugin itself
+  kind: gotcha
+  cause: @eslint/config-array refuses two different objects under one plugin name
+  resolution: build the plugin base object, then add configs to it in place (Object.assign) so the preset holds the plugin itself
+  artifact: Cannot redefine plugin "define-config"
+  signal: loud
+- every plugin.configs / plugin.meta access warns under eslint-plugin-import, in this repo and in any host using it
+  trigger: when src/index.ts exports named meta/rules/configs alongside a default plugin object
+  kind: gotcha
+  cause: import/no-named-as-default-member fires when a default export's member shares a name with a named export
+  resolution: make the plugin object the only value export; keep meta, rules and configs as its properties
+  artifact: also has a named export `configs`. Check if you meant to write `import {configs} from './index'` instead
+  signal: loud
+- the settings rule reports on read.call.callee, matching where the locator puts findings owned by defaults
+  trigger: when choosing the node the settings rule reports on
+  kind: pattern
+  cause: reporting on the whole call spans the entire config array
+  resolution: report on the callee loc (line 3, columns 16-28 in the shared sourceOf fixture)
+  artifact: const { loc } = read.call.callee;
+  signal: silent
+- a backtick string with no interpolation fails @stylistic/quotes even when it contains backticks itself
+  trigger: when writing a message constant as a template literal split across concatenated lines
+  kind: gotcha
+  cause: quotes rule is single with no allowTemplateLiterals, so only interpolating templates are allowed
+  resolution: write the piece as a single-quoted string with escaped apostrophe
+  artifact: Strings must use singlequote  @stylistic/quotes
+  signal: loud
+- report with loc: located.node.loc instead of node, so no ESTree/TSESTree cast is needed
+  trigger: when a rule reports a TSESTree node through eslint's Rule.RuleContext
+  kind: pattern
+  cause: eslint types report nodes as ESTree while the locator returns TSESTree nodes
+  resolution: only the Program handed to readEntries is cast, with a comment; reports use loc
+  artifact: context.report({ loc: located.node.loc
+  signal: silent
+- flow-shaped arrays end in }] with no trailing comma, so appending an element produced invalid source
+  trigger: when appending a non-literal element to build an unsupported file
+  kind: gotcha
+  cause: the helper assumed every fixture array ended with a comma and newline
+  resolution: strip any trailing comma and whitespace, then append ', extra]'
+  artifact: A fatal parsing error occurred: Parsing error: ',' expected.
+  signal: loud
+- a silent case built from another code's config is what proves a rule filters by code; the handler-conflict config also yields unreachable, which checks the reported case's error count
+  trigger: when a rule-test fixture's only finding is the rule's own code
+  kind: pattern
+  cause: a rule that reports every surviving finding passes any test whose config holds only its own code
+  resolution: added a silent case built from another code's config to each rule, and checked that removing the filter fails all nine
+  artifact: silent on another code's finding
+  signal: silent
+- the opaque cases for required-dropped, cycle and interactive-unattended pass with the suppression removed
+  trigger: when proving each rule's opaque case is silenced by the suppression
+  kind: gotcha
+  cause: the placeholder string never produces those codes: it does not drop a required key, it becomes an unknown-step rather than a cycle, and it is not true so $unattended is off
+  resolution: kept them as silent opaque cases and did not count them as proof of the suppression; the other 6 rules' opaque cases fail without it
+  artifact: 62 pass 6 fail
+  signal: silent
+- defaults are concatenated first, so defaults can never override a file entry
+  trigger: when a task asks for a handler set in the file and overridden in defaults
+  kind: gotcha
+  cause: merge order is defaults then file entries
+  resolution: tested the file-and-defaults both set case, which reports on the file line
+  signal: silent
+- matching a key against every dot-joined run of path keys handles both 'a.b' spanning ['a','b'] and a path key that itself holds a dot
+  trigger: when matching a written object key against a diagnostic path
+  kind: pattern
+  cause: provenance and required paths dot-join keys, so a dotted key and nested keys share a path
+  resolution: spanOf finds the n with path.slice(from, from + n).join('.') === key
+  artifact: spanOf
+  signal: silent
+- sed mutations of the locator (no defaults subtraction, no dotted span, counting removes, first match instead of last, no defaults branch) each turn tests red
+  trigger: when checking that locator tests can fail
+  kind: pattern
+  cause: a passing suite alone does not show the assertions constrain the behaviour
+  resolution: back up locate.ts, apply one mutation, run bun test src/locate.test.ts, restore, and diff against the backup
+  artifact: 41 pass  10 fail <- no subtraction
+  signal: silent
+- an untyped const array literal infers string[] and fails check-types while bun test passes
+  trigger: when asserting toEqual on a literal string array against DiagnosticCode values
+  kind: gotcha
+  cause: expect(DiagnosticCode[]).toEqual narrows its parameter to the union
+  resolution: annotate the expected array as DiagnosticCode[]
+  artifact: error TS2769: No overload matches this call.
+  signal: loud
+- provenance at flows.f.a names only the entry that started the step map, not a later entry that merged keys into it
+  trigger: when locating a graph finding whose path ends at a step id (handler-conflict, interactive-unattended, unreachable)
+  kind: gotcha
+  cause: merge records nothing at a path for a map merged into an existing map, only at the keys it writes below
+  resolution: accepted as the spec's rule; pinned by the test 'ties a graph finding to the entry that started its map, not one that merged into it'
+  artifact: a map merged into a map already at the path records nothing at the path itself
+  signal: silent
+- the tsconfig lib target lacks es2023, so toSorted fails check-types while bun test still passes
+  trigger: when using Array.prototype.toSorted in a *.test.ts file
+  kind: gotcha
+  cause: tsconfig lib is older than es2023
+  resolution: copy and sort with [...items].sort()
+  artifact: Property 'toSorted' does not exist on type
+  signal: loud
+- The cache accepts a compute thunk, so tests use stand-in objects as the SourceCode key and Analysis value and never parse real source
+  trigger: when caching per linted file
+  kind: pattern
+  cause: the WeakMap only uses the identity of its key and value
+  resolution: cast plain objects to SourceCode and Analysis in the tests
+  artifact: cachedAnalysis(sourceCode, compute)
+  signal: silent
+- six perl breaks of suppress.ts (reachOf identity, one-way overlaps, no per-flow scope, non-flow scope as own path, joined-string prefix, graph unfiltered) each failed between 1 and 7 tests
+  trigger: when a suppression test passes on its first run
+  kind: pattern
+  cause: a suite that passes at once proves nothing until a broken implementation fails it
+  resolution: back up the file, apply each break, run bun test on the one file, restore and check with cmp
+  signal: silent
+- [{ a: 1 }, { $replace: true, a: 2 }] still yields duplicate-key at a, so an opaque root $replace suppresses a finding the loader would report
+  trigger: when checking whether a root-level $replace resets duplicate-key tracking
+  kind: location
+  cause: the library records duplicates per layer and does not clear them on a root replace
+  resolution: accepted as under-reporting, which is allowed by design
+  signal: silent
+- the reader records the opaque path as ['flows','$replace'], which overlaps no ['flows', f], so the plain prefix rule keeps a defaults flow's finding that a literal true would replace away
+  trigger: when an opaque value is the $replace key itself, as in flows: { $replace: flag }
+  kind: gotcha
+  cause: the placeholder is not true, so the merge does not replace, while a true value at runtime would wipe the holding object's merged subtree
+  resolution: reachOf maps an opaque path ending in $replace to its parent path before the overlap checks
+  artifact: unreachable@flows.g.d
+  signal: silent
+- artifact: PLAN_TRACKER-rafa-2-eslint-plugin.md: discovers and runs `**/*.test.ts` files in parallel
+- PIPESTATUS printed nothing, so the exit code was not read
+  trigger: when reading a gate's exit code through a pipe in the Bash tool
+  kind: gotcha
+  cause: the shell is zsh, whose array is the lowercase pipestatus
+  resolution: redirect each gate to a file and read $? directly
+  signal: silent
+- check-types fails because tsconfig sets lib ES2022; bun test passes anyway
+  trigger: when using Array.prototype.toSorted in a test
+  kind: gotcha
+  cause: toSorted is ES2023
+  resolution: use [...array].sort()
+  artifact: Property 'toSorted' does not exist on type 'string[]'
+  signal: loud
+- the published 0.4.0 resolveGraph takes Readonly<Record<string, unknown>>, so no cast is needed once flows is narrowed, unlike the progress.txt note predicted
+  trigger: when calling resolveGraph on the merged flows
+  kind: location
+  cause: the earlier cast was needed only because value['flows'] is unknown
+  resolution: narrow with an isRecord check in flowsOf, the way the loader does
+  artifact: export declare function resolveGraph(flows: Readonly<Record<string, unknown>>, steps: StepRegistry): ResolveGraphResult;
+  signal: silent
+- a string flows cannot tell a checked flowsOf from an unchecked one; an array flows can
+  trigger: when testing that analyse reads a non-object flows as no flows
+  kind: pattern
+  cause: resolveGraph finds no plain-object flow in a string's characters but reads an array's item 0 as a flow named '0'
+  resolution: the test includes flows: [{ a: { step: 'nope' } }] and expects no findings
+  signal: silent
+- a placeholder handler target, step name or $start is reported as unknown-step at the opaque path itself, so it never resolves to a real step
+  trigger: when checking what the placeholder does inside the graph
+  kind: pattern
+  cause: a handler target is looked up as a step entry of the flow or a registered step, and the placeholder is neither
+  resolution: a PLACEHOLDER test asserts the three unknown-step paths, sorted, since the library's reporting order is internal
+  artifact: which is neither a step entry of flow
+  signal: silent
