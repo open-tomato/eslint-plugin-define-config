@@ -1,3 +1,9 @@
+- defaults are concatenated first, so defaults can never override a file entry
+  trigger: when a task asks for a handler set in the file and overridden in defaults
+  kind: gotcha
+  cause: merge order is defaults then file entries
+  resolution: tested the file-and-defaults both set case, which reports on the file line
+  signal: silent
 - matching a key against every dot-joined run of path keys handles both 'a.b' spanning ['a','b'] and a path key that itself holds a dot
   trigger: when matching a written object key against a diagnostic path
   kind: pattern
