@@ -1,3 +1,31 @@
+- report with loc: located.node.loc instead of node, so no ESTree/TSESTree cast is needed
+  trigger: when a rule reports a TSESTree node through eslint's Rule.RuleContext
+  kind: pattern
+  cause: eslint types report nodes as ESTree while the locator returns TSESTree nodes
+  resolution: only the Program handed to readEntries is cast, with a comment; reports use loc
+  artifact: context.report({ loc: located.node.loc
+  signal: silent
+- flow-shaped arrays end in }] with no trailing comma, so appending an element produced invalid source
+  trigger: when appending a non-literal element to build an unsupported file
+  kind: gotcha
+  cause: the helper assumed every fixture array ended with a comma and newline
+  resolution: strip any trailing comma and whitespace, then append ', extra]'
+  artifact: A fatal parsing error occurred: Parsing error: ',' expected.
+  signal: loud
+- a silent case built from another code's config is what proves a rule filters by code; the handler-conflict config also yields unreachable, which checks the reported case's error count
+  trigger: when a rule-test fixture's only finding is the rule's own code
+  kind: pattern
+  cause: a rule that reports every surviving finding passes any test whose config holds only its own code
+  resolution: added a silent case built from another code's config to each rule, and checked that removing the filter fails all nine
+  artifact: silent on another code's finding
+  signal: silent
+- the opaque cases for required-dropped, cycle and interactive-unattended pass with the suppression removed
+  trigger: when proving each rule's opaque case is silenced by the suppression
+  kind: gotcha
+  cause: the placeholder string never produces those codes: it does not drop a required key, it becomes an unknown-step rather than a cycle, and it is not true so $unattended is off
+  resolution: kept them as silent opaque cases and did not count them as proof of the suppression; the other 6 rules' opaque cases fail without it
+  artifact: 62 pass 6 fail
+  signal: silent
 - defaults are concatenated first, so defaults can never override a file entry
   trigger: when a task asks for a handler set in the file and overridden in defaults
   kind: gotcha
@@ -198,38 +226,3 @@
   resolution: only package.json, dist/index.js and dist/index.d.ts are required; README.md and LICENSE are allowed, not required
   artifact: packed tarball is missing
   signal: silent
-- the library's fence settings name its own package, which here is a real runtime dependency
-  trigger: when adapting the markdown-fence settings from ../define-config
-  kind: gotcha
-  cause: the library ignored and pinned its own unbuilt name; in this package that name resolves from node_modules
-  resolution: point the fence no-unresolved ignore and import/internal-regex at @open-tomato/eslint-plugin-define-config
-  artifact: 'import/internal-regex': '^@open-tomato/define-config$'
-  signal: silent
-- a clean eslint . cannot prove the ignores work; putting the same bad file in both a linted directory and each ignored one proves both the rules and the ignores
-  trigger: when checking that eslint ignores really exclude a directory
-  kind: pattern
-  cause: an ignored directory holding no bad files gives the same exit 0 as one that is linted
-  resolution: put a double-quoted, semicolon-free unused const in src/ and in each ignored directory; only the src/ copy should report
-  artifact: Strings must use singlequote
-  signal: silent
-- bun blocks the unrs-resolver postinstall and reports it as untrusted
-  trigger: when adding eslint-import-resolver-typescript with bun add
-  kind: gotcha
-  cause: bun runs lifecycle scripts only for trusted dependencies, and ../define-config does not trust this one either
-  resolution: left untrusted; eslint . works without the script
-  artifact: Blocked 1 postinstall. Run `bun pm untrusted` for details.
-  signal: loud
-- the placeholder entry cannot show whether --packages external works; a throwaway probe importing merge, built with and without the flag, shows it
-  trigger: when verifying the build keeps dependencies external while src/index.ts imports nothing
-  kind: pattern
-  cause: a bundle with no imports looks the same either way
-  resolution: check dist/index.js for 'from "@open-tomato/define-config"' once the rules stage imports the library
-  artifact: --packages external
-  signal: silent
-- bun test exits 1 when it discovers zero test files
-  trigger: when running bun test before any *.test.ts file exists
-  kind: gotcha
-  cause: bun test treats no matching files as an error
-  resolution: expected until scripts/pack-check.test.ts lands in a later scaffold task
-  artifact: error: 0 test files matching **{.test,.spec,_test_,_spec_}.{js,ts,jsx,tsx}
-  signal: loud
