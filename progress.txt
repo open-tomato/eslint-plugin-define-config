@@ -1,3 +1,22 @@
+- six perl breaks of suppress.ts (reachOf identity, one-way overlaps, no per-flow scope, non-flow scope as own path, joined-string prefix, graph unfiltered) each failed between 1 and 7 tests
+  trigger: when a suppression test passes on its first run
+  kind: pattern
+  cause: a suite that passes at once proves nothing until a broken implementation fails it
+  resolution: back up the file, apply each break, run bun test on the one file, restore and check with cmp
+  signal: silent
+- [{ a: 1 }, { $replace: true, a: 2 }] still yields duplicate-key at a, so an opaque root $replace suppresses a finding the loader would report
+  trigger: when checking whether a root-level $replace resets duplicate-key tracking
+  kind: location
+  cause: the library records duplicates per layer and does not clear them on a root replace
+  resolution: accepted as under-reporting, which is allowed by design
+  signal: silent
+- the reader records the opaque path as ['flows','$replace'], which overlaps no ['flows', f], so the plain prefix rule keeps a defaults flow's finding that a literal true would replace away
+  trigger: when an opaque value is the $replace key itself, as in flows: { $replace: flag }
+  kind: gotcha
+  cause: the placeholder is not true, so the merge does not replace, while a true value at runtime would wipe the holding object's merged subtree
+  resolution: reachOf maps an opaque path ending in $replace to its parent path before the overlap checks
+  artifact: unreachable@flows.g.d
+  signal: silent
 - artifact: PLAN_TRACKER-rafa-2-eslint-plugin.md: discovers and runs `**/*.test.ts` files in parallel
 - PIPESTATUS printed nothing, so the exit code was not read
   trigger: when reading a gate's exit code through a pipe in the Bash tool
