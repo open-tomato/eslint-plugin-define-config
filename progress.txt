@@ -1,3 +1,9 @@
+- the fixture is read as text for the parser and dynamically imported for the runtime array, so the two views come from one file
+  trigger: when a test must both parse and execute the same config file
+  kind: pattern
+  cause: parity needs identical source on both sides
+  resolution: keep the fixture in src/reader/fixtures/ and use Bun.file(url).text() plus import(url.href)
+  signal: silent
 - the build now emits dist/reader/read-entries.d.ts, which imports type from @typescript-eslint/types, a devDependency
   trigger: when running bun run build after adding src/reader
   kind: location
