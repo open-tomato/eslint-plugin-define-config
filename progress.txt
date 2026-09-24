@@ -1,3 +1,24 @@
+- import/order wants the parent group, the sibling group and the ./index import each in its own group, separated by blank lines
+  trigger: when an index test imports ../package.json beside sibling and index imports
+  kind: pattern
+  cause: the index path group is separate from sibling in sharedRules.mjs
+  resolution: put ../package.json first, then the ./x imports, then import plugin from './index' after a blank line
+  artifact: There should be at least one empty line between import groups
+  signal: loud
+- a host that also registers the plugin under the same prefix makes ESLint throw
+  trigger: when a flat-config preset registers a copy of the plugin rather than the plugin itself
+  kind: gotcha
+  cause: @eslint/config-array refuses two different objects under one plugin name
+  resolution: build the plugin base object, then add configs to it in place (Object.assign) so the preset holds the plugin itself
+  artifact: Cannot redefine plugin "define-config"
+  signal: loud
+- every plugin.configs / plugin.meta access warns under eslint-plugin-import, in this repo and in any host using it
+  trigger: when src/index.ts exports named meta/rules/configs alongside a default plugin object
+  kind: gotcha
+  cause: import/no-named-as-default-member fires when a default export's member shares a name with a named export
+  resolution: make the plugin object the only value export; keep meta, rules and configs as its properties
+  artifact: also has a named export `configs`. Check if you meant to write `import {configs} from './index'` instead
+  signal: loud
 - the settings rule reports on read.call.callee, matching where the locator puts findings owned by defaults
   trigger: when choosing the node the settings rule reports on
   kind: pattern
@@ -201,28 +222,3 @@
   resolution: put every import type line in one leading block, in the order the lint message gives
   artifact: `./read-entries` type import should occur before type import of `@typescript-eslint/types`
   signal: loud
-- toEqual on a mapped array of node.type values against string literals fails check-types, although bun test passes
-  trigger: when asserting on an array of node.type values in a test
-  kind: gotcha
-  cause: the mapped array is AST_NODE_TYPES.ObjectExpression[] and expect's overload rejects the string literal array
-  resolution: assert with every((node) => node.type === 'ObjectExpression') instead
-  artifact: Type '"ObjectExpression"' is not assignable to type 'AST_NODE_TYPES.ObjectExpression'.
-  signal: loud
-- string-literal comparison against the AST_NODE_TYPES enum type-checks for real node names and errors for bogus ones, so an import type of TSESTree needs no runtime enum import
-  trigger: when comparing TSESTree node.type against a string literal
-  kind: pattern
-  cause: TS allows comparing a string enum member type with a string literal of the same value
-  resolution: use import type from @typescript-eslint/types and compare node.type with string literals; a bogus name is the control
-  artifact: This comparison appears to be unintentional because the types 'AST_NODE_TYPES' and '"NotANodeType"' have no overlap.
-  signal: loud
-- scaffold is complete and functional
-  trigger: all gates passed on first run
-  kind: pattern
-  signal: loud
-- a passing check-pack is only meaningful next to a control that plants a stray file and a file: specifier
-  trigger: when proving check-pack can fail
-  kind: pattern
-  cause: a clean manifest exits 0 whether or not the checks work
-  resolution: temporarily add tsconfig.json to files and set the dependency to file:../define-config; expect exit 1 with both problems, then restore package.json
-  artifact: check-pack: packed tarball holds tsconfig.json, which is outside the allow-list
-  signal: silent
