@@ -74,8 +74,7 @@ same warning in `opaque/rafa.config.ts`, and exits 1.
 ## ESLint Style Law for Agent Sessions
 
 **Style is enforced by ESLint.** Write code, run `bun run lint`, and take the ordering and fixes
-from the message. The config is in `eslint.config.mjs` and `sharedRules.mjs` (adapted from
-`../define-config`).
+from the message. The config is in `eslint.config.mjs`, which extends `@open-tomato/eslint-config`.
 
 ### Style Rules Summary
 
