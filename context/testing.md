@@ -13,8 +13,9 @@ nothing written elsewhere; `AGENTS.md` points here from its test section.
 
 ## The `RULES` exhaustiveness test type-checks a scratch copy
 
-`src/rules/rules-exhaustive.test.ts` copies `src/`, `tsconfig.base.json` and `package.json` into
-a temp directory and runs `tsc --noEmit` there. Anything else is absent from the copy, so a test
+`src/rules/rules-exhaustive.test.ts` copies `src/` and `package.json` into a temp directory,
+links `node_modules`, writes a tsconfig that extends the shared `bun` flavor, and runs
+`tsc --noEmit` there. Anything else is absent from the copy, so a test
 under `src/` must not statically import from `../fixtures/` (or any path outside that set): the
 "unmodified copy of src type-checks" case goes red. Load fixture modules with a dynamic `import()`
 of a computed path instead. A new file a `src/` test needs outside `src/` must be added to the copy.

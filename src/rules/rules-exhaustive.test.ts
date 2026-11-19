@@ -21,16 +21,17 @@ async function typecheck(dir: string): Promise<number> {
   return proc.exited;
 }
 
-/** Copies `src/` and the tsconfig files into a fresh scratch directory. */
+/**
+ * Copies `src/` and `package.json` into a fresh scratch directory, with a
+ * tsconfig that extends the same shared flavor as the root one.
+ */
 async function makeCopy(name: string): Promise<string> {
   const dir = join(scratch, name);
 
   await cp(join(ROOT, 'src'), join(dir, 'src'), { recursive: true });
-  await cp(join(ROOT, 'tsconfig.base.json'), join(dir, 'tsconfig.base.json'));
   await cp(join(ROOT, 'package.json'), join(dir, 'package.json'));
   await writeFile(join(dir, 'tsconfig.json'), JSON.stringify({
-    extends: './tsconfig.base.json',
-    compilerOptions: { lib: ['ES2022'], module: 'ESNext', types: ['bun'] },
+    extends: ['@open-tomato/typescript-config/bun', '@open-tomato/typescript-config/tooling'],
     include: ['src'],
   }));
   await symlink(join(ROOT, 'node_modules'), join(dir, 'node_modules'));
